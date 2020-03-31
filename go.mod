@@ -1,4 +1,4 @@
-module github.com/smallnest/rpcx
+module github.com/jhuix-go-pkg/rpcx
 
 go 1.13
 

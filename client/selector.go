@@ -14,9 +14,11 @@ import (
 	"github.com/valyala/fastrand"
 )
 
+type SelectFunc func(ctx context.Context, servicePath, serviceMethod string, args interface{}) string
+
 // Selector defines selector that selects one service from candidates.
 type Selector interface {
-	Select(ctx context.Context, servicePath, serviceMethod string, args interface{}) string
+	Select(ctx context.Context, servicePath, serviceMethod string, args interface{}) string // SelectFunc
 	UpdateServer(servers map[string]string)
 }
 
@@ -240,13 +242,15 @@ type consistentHashSelector struct {
 }
 
 func newConsistentHashSelector(servers map[string]string) Selector {
+	h := doublejump.NewHash()
 	ss := make([]string, 0, len(servers))
 	for k := range servers {
 		ss = append(ss, k)
+		h.Add(k)
 	}
 
 	sort.Slice(ss, func(i, j int) bool { return ss[i] < ss[j] })
-	return &consistentHashSelector{servers: ss, h: doublejump.NewHash()}
+	return &consistentHashSelector{servers: ss, h: h}
 }
 
 func (s consistentHashSelector) Select(ctx context.Context, servicePath, serviceMethod string, args interface{}) string {
